@@ -37,9 +37,15 @@ app.get("/", (req, res) => {
 
 //DB + server start
 connectDB().then(() => {
-    const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () => console.log(`Server running on port : http://localhost:${PORT}`));
-})
+    const PORT = process.env.PORT || 8000;
+    server.listen(PORT, () => {
+        console.log(`🚀 Server running on port: http://localhost:${PORT}`);
+        console.log(`🎮 Chat App is ready to use!`);
+    });
+}).catch(err => {
+    console.error("❌ Failed to connect to database:", err);
+    process.exit(1);
+});
     
 
 // command to crate JWT token = node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"

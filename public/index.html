@@ -3,29 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat App</title>
-
+  <title>💬 Chat App</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 
 <body>
   <div class="chat-container">
-    <div class="chat-header">💬 MY Chat App</div>
-
-    <div class="user-setup">
-      <input type="text" id="sender" placeholder="Your ID" />
-      <input type="text" id="receiver" placeholder="Friend ID" />
-      <button onclick="connectSocket()">Connect</button>
+    <!-- Login Section -->
+    <div class="login-section" id="loginSection">
+      <div class="login-header">
+        <h1>💬 Welcome to Chat App</h1>
+        <p>Enter your username to start chatting</p>
+      </div>
+      <div class="login-form">
+        <input type="text" id="usernameInput" placeholder="Your Username" />
+        <button onclick="login()" id="loginBtn">Join Chat</button>
+      </div>
     </div>
 
-    <div class="chat-messages" id="messages"></div>
+    <!-- Main Chat Section -->
+    <div class="main-chat" id="mainChat" style="display: none;">
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="user-info">
+          <span class="username-display" id="usernameDisplay">Chat App</span>
+          <span class="online-indicator"></span>
+        </div>
+        <button onclick="logout()" class="logout-btn">Logout</button>
+      </div>
 
-    <div class="chat-input">
-      <input type="text" id="messageInput" placeholder="Type message..." />
-      <button onclick="sendMessage()">Send</button>
+      <!-- Sidebar and Chat Area -->
+      <div class="chat-body">
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sidebar-header">
+            <h3>Online Users</h3>
+            <span class="online-count" id="onlineCount">0 online</span>
+          </div>
+          <div class="online-users" id="onlineUsers">
+            <!-- Online users will be populated here -->
+          </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+          <div class="chat-info">
+            <div class="chat-with">
+              <span id="chatWithUser">Select a user to start chatting</span>
+              <span class="user-status" id="userStatus"></span>
+            </div>
+          </div>
+          
+          <div class="chat-messages" id="messages">
+            <div class="welcome-message">
+              <h3>Welcome to Chat App! 🎉</h3>
+              <p>Select a user from the sidebar to start chatting</p>
+            </div>
+          </div>
+
+          <div class="chat-input">
+            <input 
+              type="text" 
+              id="messageInput" 
+              placeholder="Type your message..." 
+              onkeypress="handleEnterPress(event)"
+              disabled
+            />
+            <button onclick="sendMessage()" id="sendBtn" disabled>
+              <span>Send</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
   <script src="index.js"></script>
 </body>
 </html>

@@ -50,10 +50,11 @@
 // });
 
 
-const asyncHandler = require("express-async-handler"); // <-- ADD THIS
+const asyncHandler = require("express-async-handler");
 const Chat = require('../models/chat.model.js');
 const Thread = require("../models/thread.model.js");
 const User = require("../models/User.js");
+const { getIO, onlineUsers } = require('../socket/socket');
 
 exports.sendMessage = asyncHandler(async (req, res) => {
     const { sender, receiver, message } = req.body;
@@ -62,18 +63,37 @@ exports.sendMessage = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "All fields are required" });
     }
 
+    // Find or create users
+    let senderUser = await User.findOne({ username: sender });
+    let receiverUser = await User.findOne({ username: receiver });
+
+    if (!senderUser) {
+        senderUser = await User.create({ 
+            username: sender, 
+            email: `${sender}@chatapp.com` 
+        });
+    }
+
+    if (!receiverUser) {
+        receiverUser = await User.create({ 
+            username: receiver, 
+            email: `${receiver}@chatapp.com` 
+        });
+    }
+
     let thread = await Thread.findOne({
-        participants: { $all: [sender, receiver] }
+        participants: { $all: [senderUser._id, receiverUser._id] }
     });
 
-    // ❌ Thread.create galat use hua tha
     if (!thread) {
-        thread = await Thread.create({ participants: [sender, receiver] });
+        thread = await Thread.create({ 
+            participants: [senderUser._id, receiverUser._id] 
+        });
     }
 
     const chat = await Chat.create({
-        sender,
-        receiver,
+        sender: senderUser._id,
+        receiver: receiverUser._id,
         message,
         thread: thread._id
     });
@@ -82,13 +102,23 @@ exports.sendMessage = asyncHandler(async (req, res) => {
     thread.lastMessageAt = Date.now();
     await thread.save();
 
-    // ❌ getSelection() galat tha (socket.io hoga)
-    const receiverSocket = onlineUsers?.get(receiver);
+    // Send real-time message to receiver if online
+    const receiverSocket = onlineUsers.get(receiver);
+    const io = getIO();
     if (receiverSocket && io) {
-        io.to(receiverSocket).emit("newMessage", chat);
+        io.to(receiverSocket).emit("new_message", {
+            message: chat.message,
+            sender: sender,
+            timestamp: chat.createdAt
+        });
     }
 
-    res.status(201).json(chat);
+    res.status(201).json({
+        success: true,
+        message: chat.message,
+        sender: sender,
+        timestamp: chat.createdAt
+    });
 });
 
 
@@ -97,6 +127,8 @@ exports.getMessages = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
 
     const messages = await Chat.find({ thread: threadId })
+        .populate('sender', 'username')
+        .populate('receiver', 'username')
         .sort({ createdAt: -1 })
         .skip((page - 1) * Number(limit))
         .limit(Number(limit));
@@ -106,4 +138,37 @@ exports.getMessages = asyncHandler(async (req, res) => {
         page: Number(page),
         limit: Number(limit)
     });
+});
+
+// Get conversation between two users
+exports.getConversation = asyncHandler(async (req, res) => {
+    const { sender, receiver } = req.params;
+
+    const senderUser = await User.findOne({ username: sender });
+    const receiverUser = await User.findOne({ username: receiver });
+
+    if (!senderUser || !receiverUser) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
+    const thread = await Thread.findOne({
+        participants: { $all: [senderUser._id, receiverUser._id] }
+    });
+
+    if (!thread) {
+        return res.status(200).json({ messages: [] });
+    }
+
+    const messages = await Chat.find({ thread: thread._id })
+        .populate('sender', 'username')
+        .populate('receiver', 'username')
+        .sort({ createdAt: 1 });
+
+    res.status(200).json({ messages });
+});
+
+// Get online users
+exports.getOnlineUsers = asyncHandler(async (req, res) => {
+    const users = Array.from(onlineUsers.keys());
+    res.status(200).json({ users });
 });
