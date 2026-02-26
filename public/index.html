@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat App</title>
+
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+
+<body>
+  <div class="chat-container">
+    <div class="chat-header">💬 MY Chat App</div>
+
+    <div class="user-setup">
+      <input type="text" id="sender" placeholder="Your ID" />
+      <input type="text" id="receiver" placeholder="Friend ID" />
+      <button onclick="connectSocket()">Connect</button>
+    </div>
+
+    <div class="chat-messages" id="messages"></div>
+
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="Type message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>
